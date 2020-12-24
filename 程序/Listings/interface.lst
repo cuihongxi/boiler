@@ -1,0 +1,276 @@
+C51 COMPILER V9.00   INTERFACE                                                             11/24/2020 19:27:24 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE INTERFACE
+OBJECT MODULE PLACED IN .\Objects\interface.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\interface\interface.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\
+                    -KEYSCAN;.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST)
+                    - DEBUG OBJECTEXTEND PRINT(.\Listings\interface.lst) OBJECT(.\Objects\interface.obj)
+
+line level    source
+
+   1          #include "interface.h"
+   2          #include "addProcessTask.h"
+   3          #define SMG_SHOW_F                      11
+   4          extern u8 smg[12];
+   5          extern u32 sys_time;    
+   6          sysParam pa = {0};              // 系统相关参数都在这里
+   7          
+   8          interface waiteInerface = {Main_keyfun,Show_WorkTime,Show_Temperature,Show_SteamTime}; // 待机状态界面
+   9          interface faceClose = {Close_keyfun,Close_timeShow,ClosetempShow,ClosesteamShow};               // 关机界面
+  10          interface facePro = {Pro_keyfun,Pro_timeShow,Pro_tempShow,Pro_teamShow};                                // 编程界面
+  11          
+  12          
+  13          //  闪烁函数
+  14          u16 Twinkle_SMG(u16 dat)
+  15          {
+  16   1              static u32 time = 0;
+  17   1              static u8 on_off = 0;
+  18   1              if((sys_time - time) > 500)
+  19   1              {
+  20   2                      time = sys_time;
+  21   2                      on_off = !on_off;
+  22   2              }
+  23   1              if(on_off) return dat;
+  24   1              else return 0xffff;
+  25   1      }
+  26          void Pro_timeShow(sysParam*  param)
+  27          {
+  28   1              // Time_Show(Twinkle_SMG(param->prodat.set[param->prodat.setnum].worktime));            // 显示当前的时间
+  29   1              Time_Show(param->prodat.set[param->prodat.setnum].worktime);
+  30   1      }
+  31          
+  32          void Pro_tempShow(sysParam*  param)
+  33          {
+  34   1              Temp_Show(param->prodat.set[param->prodat.setnum].settemp);             // 显示当前温度
+  35   1      }
+  36          
+  37          void Pro_teamShow(sysParam*  param)
+  38          {
+  39   1              Steam_Show(param->prodat.set[param->prodat.setnum].steamtime);  // 显示蒸汽时间
+  40   1      }
+  41          
+  42          
+  43          // 闪烁编程指示灯
+  44          void TwinkleProLed_Fun()
+  45          {
+  46   1              static u32 time = 0;
+  47   1              static u8 on_off = 0;
+  48   1              if((sys_time - time) > 500)
+  49   1              {
+  50   2                      time = sys_time;
+  51   2                      on_off = !on_off;
+  52   2                      ProLED_Show(on_off);
+  53   2              }
+C51 COMPILER V9.00   INTERFACE                                                             11/24/2020 19:27:24 PAGE 2   
+
+  54   1      }
+  55          
+  56          // 编程界面
+  57          void Pro_keyfun(sysParam*  param)
+  58          {
+  59   1              static u8 flag_init = 0;
+  60   1              if(param->keyval)       // 键值处理
+  61   1              {
+  62   2                      printf("param.keyval = %d\r\n",param->keyval);
+  63   2                      if(flag_init == 0 && param->keyval <= KEY_MOD12)
+  64   2                      {
+  65   3                              flag_init = 1;
+  66   3                              ProLED_Show(0); // 关闭编程指示灯
+  67   3                      }
+  68   2                              
+  69   2                      LED_MOD_Select(param->keyval);// 点亮MOD相应的LED
+  70   2                      switch(param->keyval)
+  71   2                      {
+  72   3                              case KEY_POWER: 
+  73   3                                      flag_init = 0;
+  74   3                                      Key_led_off();
+  75   3                                      param->pInterface = &faceClose;
+  76   3                                      //debug("faceClose\r\n");
+  77   3                              break;
+  78   3                      }
+  79   2      
+  80   2                      
+  81   2                      if(flag_init)
+  82   2                      {
+  83   3                              Fun_KeyFun(param->keyval);      // 按键扫描，根据键值执行对应的函数
+  84   3                              FAndFanLED_Show(pa.prodat.setnum,pa.prodat.set[pa.prodat.setnum].funspeed);     // F 和风速数码管显示
+  85   3                              if((param->keyval & 0x7f) == KEY_P) // 长按短按P都返回
+  86   3                              {
+  87   4                                      flag_init = 0;
+  88   4                                      ProLED_Show(0); // 关闭编程指示灯
+  89   4                                      param->pInterface = &waiteInerface;// 返回待机界面
+  90   4                              }
+  91   3                      }
+  92   2                              
+  93   2                                      
+  94   2                      param->keyval = 0;
+  95   2      
+  96   2              }else
+  97   1              {
+  98   2                      if(flag_init == 0)
+  99   2                      {
+ 100   3                              TwinkleProLed_Fun();    // 编程LED闪烁
+ 101   3                      }
+ 102   2              }
+ 103   1      }
+ 104          
+ 105          
+ 106          /*******************************开机界面************************************/
+ 107          // 开机后主界面
+ 108          void Main_keyfun(sysParam*  param)
+ 109          {
+ 110   1              if(param->keyval)       // 键值处理
+ 111   1              {
+ 112   2                      if(param->keyval&LONG_PRESS)    // 长按
+ 113   2                      {
+ 114   3                              printf("waiteInerface L: %d\r\n",param->keyval&(~LONG_PRESS));                  
+ 115   3                      }
+C51 COMPILER V9.00   INTERFACE                                                             11/24/2020 19:27:24 PAGE 3   
+
+ 116   2                      else                                    // 短按
+ 117   2                      {
+ 118   3                              printf("waiteInerface S: %d\r\n",param->keyval);
+ 119   3                              switch(param->keyval)
+ 120   3                              {
+ 121   4                                      case KEY_P:                     
+ 122   4                                              if(param->timsta == off)        // 定时器未启动状态下，按P键，1~12闪烁
+ 123   4                                              {
+ 124   5                                                      param->pInterface = &facePro;   // 进入编程界面
+ 125   5                                              }
+ 126   4                                              break;
+ 127   4                                      case KEY_POWER: 
+ 128   4                                              param->pInterface = &faceClose;
+ 129   4                                              debug("faceClose\r\n");
+ 130   4                                      break;
+ 131   4                              }
+ 132   3      
+ 133   3                      }
+ 134   2                      
+ 135   2                      param->keyval = 0;
+ 136   2      
+ 137   2              }
+ 138   1      }
+ 139          
+ 140          // 显示工作时间
+ 141          void Show_WorkTime(sysParam*  param)
+ 142          {
+ 143   1              Time_Show(param->workSeconds);
+ 144   1      }
+ 145          
+ 146          // 显示温度
+ 147          void Show_Temperature(sysParam*  param)
+ 148          {
+ 149   1              Temp_Show(param->temp);
+ 150   1      }
+ 151          
+ 152          // 显示蒸汽时间
+ 153          void Show_SteamTime(sysParam*  param)
+ 154          {
+ 155   1              Steam_Show(param->steamSeconds);
+ 156   1      }
+ 157          
+ 158          
+ 159          /******************************关机界面*************************************/
+ 160          void Close_keyfun(sysParam*  param)
+ 161          {
+ 162   1              //u8 dat = 0x88;
+ 163   1              //u8 a = 0;
+ 164   1              if(param->keyval)       // 键值处理
+ 165   1              {
+ 166   2                      if(param->keyval&LONG_PRESS)    // 长按
+ 167   2                      {
+ 168   3                              printf("faceClose L: %d\r\n",param->keyval&(~LONG_PRESS));
+ 169   3                              
+ 170   3                      }
+ 171   2                      else                                    // 短按
+ 172   2                      {
+ 173   3                              printf("faceClose S: %d\r\n",param->keyval);
+ 174   3                              switch(param->keyval)
+ 175   3                              {
+ 176   4                                      case KEY_POWER:
+ 177   4                                              param->pInterface = &waiteInerface;// 开机流程
+C51 COMPILER V9.00   INTERFACE                                                             11/24/2020 19:27:24 PAGE 4   
+
+ 178   4                                      break;
+ 179   4      //                              case KEY_MOD1:
+ 180   4      //                                      debug("save dat\r\n");
+ 181   4      //                                      flashSave(0, &dat,1);
+ 182   4      //                              break;
+ 183   4      //                              case KEY_MOD2:
+ 184   4      //                                      flashRead(0, &a,1);
+ 185   4      //                                      printf("a = %d\r\n",a);
+ 186   4      //                              break;
+ 187   4                                                                      
+ 188   4                              }
+ 189   3                      }
+ 190   2                      
+ 191   2                      param->keyval = 0;
+ 192   2      
+ 193   2              }
+ 194   1      }
+ 195          
+ 196          void Close_timeShow(sysParam*  param)   // 时间数码管显示内容
+ 197          {
+ 198   1              param->keyval = param->keyval;
+ 199   1              smgbuf[6] = 0;
+ 200   1              smgbuf[7] = 0;
+ 201   1              smgbuf[8] = 0;
+ 202   1              smgbuf[9] = 0;  
+ 203   1      }
+ 204          
+ 205          void ClosetempShow(sysParam*  param)                    // 温度数码管显示内容
+ 206          {
+ 207   1              param->keyval = param->keyval;
+ 208   1              LedAlloff();
+ 209   1              smgbuf[0] = smg[0];
+ 210   1              smgbuf[1] = smg[SMG_SHOW_F];
+ 211   1              smgbuf[2] = smg[SMG_SHOW_F];
+ 212   1      }
+ 213          
+ 214          void ClosesteamShow(sysParam*  param)           // 蒸汽数码管显示内容
+ 215          {
+ 216   1              param->keyval = param->keyval;
+ 217   1              smgbuf[3] = 0;
+ 218   1              smgbuf[4] = 0;
+ 219   1              smgbuf[5] = 0;
+ 220   1      }
+ 221          
+ 222          
+ 223          
+ 224          
+ 225          
+ 226          
+ 227          
+ 228          
+ 229          
+ 230          
+ 231          
+ 232          
+ 233          
+ 234          
+ 235          
+ 236          
+ 237          
+ 238          
+ 239          
+C51 COMPILER V9.00   INTERFACE                                                             11/24/2020 19:27:24 PAGE 5   
+
+ 240          
+ 241          
+ 242          
+ 243          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1077    ----
+   CONSTANT SIZE    =    112    ----
+   XDATA SIZE       =    103      11
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

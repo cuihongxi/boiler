@@ -1,0 +1,428 @@
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SPI
+OBJECT MODULE PLACED IN .\Objects\spi.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\MPU430-SPI\spi.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSC
+                    -AN;.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBU
+                    -G OBJECTEXTEND PRINT(.\Listings\spi.lst) OBJECT(.\Objects\spi.obj)
+
+line level    source
+
+   1          #include <INTRINS.H>
+   2          
+   3          #include "STC8.h"
+   4          #include "spi.h"
+   5          #include "crc.h"
+   6          extern  u32 Get_sys_time(void);  // 1msŒ™µ•Œª
+   7          
+   8          TempCtrl_t tc[TCHSNUM] = {0};
+   9          int  roomTemp = 0;
+  10          int  fullTemp = 0;
+  11          
+  12          bit rst430TimeEn = 0;
+  13          u32 rst_430time = 0;
+  14          SPI_str_t spi = {0};
+  15          uchar restart430;
+  16          
+  17          //÷˜ª˙∑¢ÀÕ√¸¡Ó£∫0|0|a|a|a|a|a|a:∂¡√¸¡Ó£¨a£∫÷∏∂®6Œªµÿ÷∑£®0~63£©
+  18          //              0|1|1|1|1|1|1|0:∂¡√¸¡Ó£¨∂¡»°CRC÷µ£®∏ﬂ◊÷Ω⁄£©
+  19          //              0|1|1|1|1|1|1|1:∂¡√¸¡Ó£¨∂¡»°CRC÷µ£®µÕ◊÷Ω⁄£©
+  20          //              1|0|a|a|a|a|a|a:–¥√¸¡Ó£¨a£∫÷∏∂®6Œªµÿ÷∑£®0~63£©£®∂‡◊÷Ω⁄–¥»Î ±Œ™ ◊µÿ÷∑£©
+  21          //              1|1|0|0|d|d|d|d:–¥√¸¡Ó£¨d£∫4Œª ˝æ›
+  22          //              1|1|1|0|1|1|1|1:–¥√¸¡Ó£¨–¥ ˝æ›Ω· ¯”√”⁄Ω” ’◊Ó∫Û“ª∏ˆªÿÀÕ ˝æ›
+  23          //              1|1|1|1|1|0|1|0:÷°Ω· ¯√¸¡Ó
+  24          //                         µ⁄1∏ˆ◊÷Ω⁄    µ⁄2∏ˆ◊÷Ω⁄         ~ ~ ~
+  25          // ˝æ›÷°∏Ò Ω£∫÷˜ª˙∂¡ ˝æ›£∫00+ ˝æ›1µÿ÷∑|00+ ˝æ›2µÿ÷∑|00+ ˝æ›nµÿ÷∑|0x7E    |0x7F     |0xFA£®Ω· ¯£©
+  26          //            ¥”ª˙ªÿ ˝æ›£∫      xx    |  ˝æ›1      |  ˝æ›2      |  ˝æ›n  |CRCµÕ◊÷Ω⁄|CRC∏ﬂ◊÷Ω⁄   
+  27          //            ÷˜ª˙–¥ ˝æ›£∫10+–¥»Îµÿ÷∑ |1100+ ˝æ›1µÕ4Œª|1100+ ˝æ›1∏ﬂ4Œª|1100+ ˝æ›nµÕ4Œª|1100+ ˝æ›n∏ﬂ4Œª|0xE
+             -F           |0xFA£®Ω· ¯£©
+  28          //            ¥”ª˙ªÿ ˝æ›£∫xx          |10+–¥»Îµÿ÷∑    |1100+ ˝æ›1µÕ4Œª|1100+ ˝æ›1∏ﬂ4Œª|1100+ ˝æ›nµÕ4Œª|110
+             -0+ ˝æ›n∏ﬂ4Œª|0xEF 
+  29          //∂¡ ˝æ› ±Ω¯––CRC–£—È£®¥”ª˙∂‘Ω” ’∫Õ∑¢ÀÕµƒÀ˘”–”––ß ˝æ›Ω¯––CRC–£—Èº∆À„‘Ÿ∑¢ÀÕ∏¯÷˜ª˙£©£¨÷˜ª˙ªÒ»° ˝æ›∫ÕCRC÷µ∫Û∂
+             -‘ ˝æ›Ω¯––CRCº∆À„–£—È£¨»Ù–£—È≤ª’˝»∑‘Ú÷ÿ–¬∂¡»° ˝æ›£¨¡¨–¯÷ÿ∑¢¥Œ ˝¥Û”⁄5¥Œ‘Ú≤˙…˙¥ÌŒÛ±®æØ°£
+  30          //–¥ ˝æ› ±¥”ª˙ ’µΩΩ· ¯¬Î∫ÛΩ¯–– ˝æ›–¥»Î£¨÷˜ª˙∂‘Ω” ’µƒ ˝æ›”Î∑¢ÀÕµƒ ˝æ›Ω¯––±»∂‘–£—È£¨»Ù–£—È≤ª’˝»∑‘Ú÷ÿ–¬–¥ ˝æ›
+             -£¨¡¨–¯÷ÿ∑¢¥Œ ˝¥Û”⁄5¥Œ‘Ú≤˙…˙¥ÌŒÛ±®æØ°£
+  31          //Œ™¡À±‹√‚ ˝æ›¥´ ‰ªÏ¬“£¨¥”ª˙Ω” ’√ø◊÷Ω⁄ ˝æ› ±∂º”¶≈–∂œ√¸¡Ó «∑Ò’˝»∑
+  32          //∂¡–¥◊÷ ˝æ›◊¢“‚¥”ª˙ ˝æ›Œ™–°∂À∏Ò Ω
+  33          
+  34          #define TIMER3_RELOAD (65536UL-MAIN_Fosc/12/1000*BYTE_INTV_T) //Timer 3÷ÿ‘ÿ÷µ,12Tƒ£ Ω,BYTE_INTV_T(ms) ±º‰ 
+  35          
+  36          
+  37          /*********Timer3≥ı ºªØ∫Ø ˝ *************/
+  38          void InitTimer3(void)
+  39          {
+  40   1              //T4T3M |=T3x12;  //1Tƒ£ Ω
+  41   1        IE2   |=ET3;     //Timer3 interrupt enable
+  42   1        T3H = (uchar)(TIMER3_RELOAD/256);
+  43   1        T3L = (uchar)(TIMER3_RELOAD%256);
+  44   1      }
+  45          
+  46          void SPI_Init()  //SPI≥ı ºªØ
+  47          {
+  48   1              InitTimer3();
+  49   1              SPI_SSIG_None();        //disable SS
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 2   
+
+  50   1              SPI_Enable();
+  51   1              SPI_MSB_First();
+  52   1              SPI_Master(); //SPI…ËŒ™÷˜ª˙ƒ£ Ω
+  53   1              SPI_SCLK_NormalL();
+  54   1              SPI_PhaseH();
+  55   1              SPI_Speed(3);   
+  56   1              SPI_INT_ENABLE();
+  57   1              
+  58   1              spi.status=0;
+  59   1              spi.txEnd=0;
+  60   1              spi.error=0;
+  61   1              spi.retry=0;
+  62   1              spi.retryCnt=0;
+  63   1              spi.commSel=0;
+  64   1              spi.calibDat=0;
+  65   1              spi.calibCmd=0;
+  66   1              spi.enable=1;
+  67   1      }
+  68          
+  69          
+  70          
+  71          //////SPI∂¡ ˝æ›¥•∑¢∑¢ÀÕ//////
+  72          void SPI_RdTrigTx(uchar addr,uchar len) //addr¥”ª˙ºƒ¥Ê∆˜ ◊µÿ÷∑£®◊÷Ω⁄µÿ÷∑£©£¨len∂¡ ˝æ›≥§∂»
+  73          {
+  74   1              uchar i,a=0;
+  75   1              
+  76   1              if(addr+len-1>RD_MAXADDR||len+3>SPI_BUFLEN)
+  77   1                      return;
+  78   1              for(i=0;i<len;i++)
+  79   1              {
+  80   2                      spi.txBuf[i]=addr;
+  81   2                      addr++;
+  82   2              }
+  83   1              spi.txBuf[len]=RDCRCL_CMD;
+  84   1              spi.txBuf[len+1]=RDCRCH_CMD;
+  85   1              spi.txBuf[len+2]=END_CMD;
+  86   1              spi.txCnt=0;
+  87   1              spi.txEnd=0;
+  88   1              SPDAT = spi.txBuf[0];
+  89   1      }
+  90          
+  91          //////SPI–¥ ˝æ›¥•∑¢∑¢ÀÕ//////
+  92          void SPI_WrTrigTx(uchar addr,uchar len,uchar *pt) //addr¥”ª˙ºƒ¥Ê∆˜ ◊µÿ÷∑£®◊÷Ω⁄µÿ÷∑£©£¨len–¥ ˝æ›≥§∂»£¨pt÷∏œ
+             -Ú¥˝–¥»Î ˝æ›µƒ÷∏’Î
+  93          {
+  94   1              uchar i,a=0,val;
+  95   1              
+  96   1              if(addr+len-1>WD_MAXADDR||(len<<1)+3>SPI_BUFLEN)
+  97   1                      return;
+  98   1              for(i=1;i<=(len<<1);i++)
+  99   1              {
+ 100   2                      if(a==0)
+ 101   2                      {
+ 102   3                              val=*pt&0x0F;
+ 103   3                              a=1;
+ 104   3                      }
+ 105   2                      else
+ 106   2                      {
+ 107   3                              val=(*pt&0xF0)>>4;
+ 108   3                              a=0;
+ 109   3                              pt++;
+ 110   3                      }
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 3   
+
+ 111   2                      spi.txBuf[i]=WRDATA_CMD+val;    
+ 112   2              }
+ 113   1              spi.txBuf[0]=WR_CMD+addr;
+ 114   1              spi.txBuf[i]=WREND_CMD;
+ 115   1              spi.txBuf[i+1]=END_CMD;
+ 116   1              spi.txCnt=0;
+ 117   1              spi.txEnd=0;
+ 118   1              SPDAT = spi.txBuf[0];
+ 119   1      }
+ 120          
+ 121          //////SPIÕ®–≈¥¶¿Ì∫Ø ˝//////
+ 122          void SPI_commProcess()
+ 123          {
+ 124   1              uchar i,j;
+ 125   1              uint crcVal;
+ 126   1        int tmp16;    
+ 127   1              
+ 128   1              if(spi.txEnd==1) //÷°∑¢ÀÕªÚΩ” ’ÕÍ≥…¥¶¿Ì
+ 129   1              {
+ 130   2                      if(spi.status==1||spi.status==3) //∂¡ ˝æ›
+ 131   2                      {
+ 132   3                              crcVal=0xFFFF;
+ 133   3                              for(i=0;i<spi.length;i++) //CRC–£—Èº∆À„£¨”Î¥”ª˙º∆À„À≥–Ú±£≥÷“ª÷¬
+ 134   3                              {
+ 135   4                                      crcVal=CRC16_2(&spi.txBuf[i],1,crcVal);
+ 136   4                                      crcVal=CRC16_2(&spi.rxBuf[i+1],1,crcVal);
+ 137   4                              }
+ 138   3                              if(spi.rxBuf[spi.length+1]==(uchar)crcVal&&spi.rxBuf[spi.length+2]==(uchar)(crcVal>>8)) //CRC–£—È’˝»∑
+ 139   3                              {
+ 140   4                                      // debug("CRC OK\r\n");
+ 141   4                                      if(spi.status==1)
+ 142   4                                      {
+ 143   5                                              for(i=0;i<(spi.length>>1);i++)
+ 144   5                                              {
+ 145   6                                                      j=i<<1;
+ 146   6                                                      tmp16=(spi.rxBuf[2+j]<<8)+spi.rxBuf[1+j];
+ 147   6                                                      switch(i)
+ 148   6                                                      {
+ 149   7                                                              case 0:
+ 150   7                                                              case 1:
+ 151   7                                                              case 2:
+ 152   7                                                                      //debug("TC_NC_ERRCODE\r\n");
+ 153   7                                                                      if(tmp16==TC_NC_ERRCODE)
+ 154   7                                                                        tc[i].measPV=TC_NC_ERRCODE;
+ 155   7                                                                      else
+ 156   7                                                                        tc[i].measPV=(tmp16+5)/10; //Àƒ…·ŒÂ»Î
+ 157   7                                                                      //printf("tc[%d] = ",i);
+ 158   7                                                                      //printf("%d\r\n",tmp16);
+ 159   7                                                                      break;
+ 160   7                                                              case 3:
+ 161   7                                                                      roomTemp=tmp16;
+ 162   7                                                                break;
+ 163   7                                                              default:
+ 164   7                                                                      break;
+ 165   7                                                }             
+ 166   6                                        }
+ 167   5                                      }
+ 168   4                                      else
+ 169   4                                      {
+ 170   5                                              roomTemp=(spi.rxBuf[2]<<8)+spi.rxBuf[1];
+ 171   5                                              fullTemp=(spi.rxBuf[8]<<8)+spi.rxBuf[7];
+ 172   5                                      }
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 4   
+
+ 173   4                                      spi.retryCnt=0;
+ 174   4                                      spi.error=0;
+ 175   4                                      spi.status=0;
+ 176   4                                      spi.commSel=0;
+ 177   4                                      restart430=0;
+ 178   4                              }
+ 179   3            else
+ 180   3                              {
+ 181   4                                      if(spi.retryCnt<5)
+ 182   4                                              spi.retryCnt++;
+ 183   4                                      else
+ 184   4                                      {
+ 185   5                                              if(restart430<5) //÷ÿ∑¢¥Œ ˝¥ÔµΩ“ª∂®÷µ ±÷ÿ∆ÙMSP430
+ 186   5                                              {
+ 187   6                                                      RST_MSP430(); //∏¥ŒªMSP430
+ 188   6                                                      restart430++;
+ 189   6                                                      spi.retryCnt=0;
+ 190   6                                                      for(i=0;i<10;i++)
+ 191   6                                                              _nop_();
+ 192   6                                                      STOP_RST_MSP430(); //Õ£÷π∏¥ŒªMSP430
+ 193   6                                                      //rst430Time=0;
+ 194   6                                                      rst_430time = Get_sys_time();
+ 195   6                                                      rst430TimeEn=1; //ø™ ºµ»¥˝º∆ ±
+ 196   6                                              }
+ 197   5                                              else
+ 198   5                                              {
+ 199   6                                                      spi.error=1; //≤˙…˙¥ÌŒÛ±®æØ
+ 200   6                                                      if(spi.retryCnt<200)
+ 201   6                                                        spi.retryCnt++;
+ 202   6                                                  else
+ 203   6                                                        restart430=4;
+ 204   6                                              }
+ 205   5                                                
+ 206   5                                      }
+ 207   4                                      spi.retry=1;
+ 208   4                              }                               
+ 209   3                      }
+ 210   2                      else
+ 211   2                              if(spi.status==2) //–¥ ˝æ›
+ 212   2                              {
+ 213   3                                      spi.retryCnt=0;
+ 214   3                                      spi.error=0;
+ 215   3                                      spi.status=0;
+ 216   3                                      spi.commSel=0;
+ 217   3                                      spi.calibCmd=0;
+ 218   3                                      restart430=0;
+ 219   3                              }                       
+ 220   2                      spi.txEnd=0;
+ 221   2              }
+ 222   1              else //≤ª‘⁄Ω· ¯¥¶¿Ì
+ 223   1              {
+ 224   2                      if(spi.status==0) //Õ®–≈ø’œ–
+ 225   2                      {
+ 226   3                              if(spi.idleTime>=FRAME_INTV_T) //ø’œ–º∆ ±¥Û”⁄µ»”⁄÷°∑¢ÀÕº‰∏Ù ±º‰‘Ú‘ –Ì∑¢ÀÕ
+ 227   3                              {
+ 228   4                                      if(spi.calibCmd!=0)
+ 229   4                                      {
+ 230   5                                              spi.commSel=2;
+ 231   5                                      }
+ 232   4                                      if(spi.idleTime>=MAX_IDLE_T&&spi.commSel==0) //◊Ó¥Ûø’œ–º∆ ±µΩ‘ÚΩ¯––∂¡ ˝æ›
+ 233   4                                              spi.commSel=1;
+ 234   4                                      
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 5   
+
+ 235   4                                      switch (spi.commSel)
+ 236   4                                      {
+ 237   5                                              case 0:
+ 238   5                                                      break;
+ 239   5                                              case 1:
+ 240   5                                                      if(1)//(interface!=17)//Ω¯»Î–£◊ºΩÁ√Ê
+ 241   5                                                      {
+ 242   6                                                              spi.status=1;
+ 243   6                                                              spi.addr=RDREG_ADDR;
+ 244   6                                                              spi.length=8;
+ 245   6                                                      }
+ 246   5                                                      else
+ 247   5                                                      {
+ 248   6                                                              spi.status=3;
+ 249   6                                                              spi.addr=RDREG_ADDR+6;
+ 250   6                                                              spi.length=8;
+ 251   6                                                      }
+ 252   5                                                      SPI_RdTrigTx(spi.addr,spi.length);
+ 253   5                                                      break;
+ 254   5                                              case 2:
+ 255   5                                                      spi.status=2;
+ 256   5                                                spi.addr=WRREG_ADDR;
+ 257   5                                                spi.length=4;
+ 258   5                                                SPI_WrTrigTx(spi.addr,spi.length,(uchar *)&spi.calibDat);
+ 259   5                                                      break;
+ 260   5                                              default:
+ 261   5                                                      break;
+ 262   5                                      }
+ 263   4      
+ 264   4                              }
+ 265   3                      }
+ 266   2              }
+ 267   1              
+ 268   1              if(!spi.enable) //Ω˚÷πÕ®–≈
+ 269   1              {
+ 270   2                      spi.retry=0;
+ 271   2                      spi.retryCnt=0;
+ 272   2                      spi.error=0;
+ 273   2                      spi.status=0;
+ 274   2                      spi.commSel=0;
+ 275   2              }
+ 276   1              if(spi.retry==1) //¥ÌŒÛ÷ÿ∑¢
+ 277   1              {
+ 278   2                      if(!rst430TimeEn)
+ 279   2                      {
+ 280   3                              switch (spi.commSel)
+ 281   3                              {
+ 282   4                                      case 0:
+ 283   4                                              break;
+ 284   4                                      case 1:
+ 285   4                                              if(1)//(interface!=17)
+ 286   4                                              {
+ 287   5                                                      spi.status=1;
+ 288   5                                                      spi.addr=RDREG_ADDR;
+ 289   5                                                      spi.length=8;
+ 290   5                                              }
+ 291   4                                              else
+ 292   4                                              {
+ 293   5                                                      spi.status=3;
+ 294   5                                                      spi.addr=RDREG_ADDR+6;
+ 295   5                                                      spi.length=8;
+ 296   5                                              }
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 6   
+
+ 297   4                                              SPI_RdTrigTx(spi.addr,spi.length);
+ 298   4                                              break;
+ 299   4                                      case 2:
+ 300   4                                              spi.status=2;
+ 301   4                                              spi.addr=WRREG_ADDR;
+ 302   4                                              spi.length=4;
+ 303   4                                              SPI_WrTrigTx(spi.addr,spi.length,(uchar *)&spi.calibDat);
+ 304   4                                              break;
+ 305   4                                      default:
+ 306   4                                              break;
+ 307   4                              }
+ 308   3                              spi.retry=0;
+ 309   3               }
+ 310   2               else //¥”ª˙430∏¥Œª∫Ûµ»¥˝º∆ ±
+ 311   2               {
+ 312   3                       if((u32)(Get_sys_time() - rst_430time) >= 3000) //µ»¥˝3s
+ 313   3                               rst430TimeEn=0;
+ 314   3               }
+ 315   2              }
+ 316   1      }
+ 317          
+ 318          //////SPI÷–∂œ∫Ø ˝//////
+ 319          void SPI_IntProcess(void) interrupt 9 
+ 320          {
+ 321   1              uchar i,nextFlag=0;
+ 322   1      //      debug("SPI_IntProcess\r\n");
+ 323   1              SPSTAT = SPIF + WCOL;   //«Â0 SPIF∫ÕWCOL±Í÷æ
+ 324   1              spi.rxBuf[spi.txCnt]=SPDAT;
+ 325   1              spi.txCnt++;
+ 326   1        if(spi.status==1||spi.status==3) //‘⁄∂¡ ˝æ›
+ 327   1              {
+ 328   2                      nextFlag=1; 
+ 329   2              }
+ 330   1              else
+ 331   1                      if(spi.status==2) //‘⁄–¥ ˝æ›
+ 332   1                      {
+ 333   2                              if(spi.txCnt>1)
+ 334   2                              {
+ 335   3                                      if(spi.rxBuf[spi.txCnt-1]!=spi.txBuf[spi.txCnt-2]&&spi.txBuf[spi.txCnt-2]!=WREND_CMD)
+ 336   3                                      {
+ 337   4                                              if(spi.retryCnt<5)
+ 338   4                                                      spi.retryCnt++;
+ 339   4                                              else 
+ 340   4                                              {
+ 341   5                                                      if(restart430<5) //÷ÿ∑¢¥Œ ˝¥ÔµΩ“ª∂®÷µ ±÷ÿ∆ÙMSP430
+ 342   5                                                  {
+ 343   6                                                          RST_MSP430(); //∏¥ŒªMSP430
+ 344   6                                                          restart430++;
+ 345   6                                                          spi.retryCnt=0;
+ 346   6                                                          for(i=0;i<10;i++)
+ 347   6                                                                  _nop_();
+ 348   6                                                          STOP_RST_MSP430(); //Õ£÷π∏¥ŒªMSP430
+ 349   6                                                              rst_430time = Get_sys_time();
+ 350   6                                                              rst430TimeEn=1; //ø™ ºµ»¥˝º∆ ±
+ 351   6                                                      }
+ 352   5                                                      else
+ 353   5                                                      {
+ 354   6                                                              spi.error=1; //≤˙…˙¥ÌŒÛ±®æØ
+ 355   6                                                              if(spi.retryCnt<200)
+ 356   6                                                                spi.retryCnt++;
+ 357   6                                                              else
+ 358   6                                                                restart430=4;
+C51 COMPILER V9.00   SPI                                                                   11/24/2020 19:30:48 PAGE 7   
+
+ 359   6                                                      }
+ 360   5                                              }
+ 361   4                                              spi.retry=1;
+ 362   4                                      }
+ 363   3                                      else // ˝æ›±»∂‘’˝»∑
+ 364   3                                              nextFlag=1;
+ 365   3                              }
+ 366   2                              else
+ 367   2              nextFlag=1;                             
+ 368   2                      }
+ 369   1              if(nextFlag)
+ 370   1              {
+ 371   2                      if(spi.txBuf[spi.txCnt-1]!=END_CMD) //∏’∑¢≥ˆµƒ ˝æ›≤ª «Ω· ¯√¸¡Ó‘ÚºÃ–¯∑¢ÀÕ
+ 372   2                      {
+ 373   3                              T4T3M |=T3R; //Timer3ø™ ºº∆ ±¥•∑¢∑¢ÀÕ
+ 374   3                      }
+ 375   2                      else            
+ 376   2                        spi.txEnd=1;
+ 377   2              }
+ 378   1      }
+ 379          
+ 380          /********************** Timer3÷–∂œ∫Ø ˝£¨”√”⁄SPIÕ®–≈ ***************/
+ 381          void Timer3IntProcess()  interrupt 19
+ 382          {
+ 383   1              T4T3M &=~T3R; //Timer3Õ£÷πº∆ ˝
+ 384   1              AUXINTIF &=~T3IF; //«Â÷–∂œ±Í÷æ
+ 385   1              SPDAT = spi.txBuf[spi.txCnt];
+ 386   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1504    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    188      10
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

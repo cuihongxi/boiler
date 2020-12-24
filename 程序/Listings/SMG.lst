@@ -1,0 +1,179 @@
+C51 COMPILER V9.00   SMG                                                                   11/24/2020 19:27:22 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE SMG
+OBJECT MODULE PLACED IN .\Objects\SMG.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\TM1640\SMG.C LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSCAN;.
+                    -\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBUG OB
+                    -JECTEXTEND PRINT(.\Listings\SMG.lst) OBJECT(.\Objects\SMG.obj)
+
+line level    source
+
+   1          #include "SMG.H"
+   2          
+   3          
+   4          u8 smgbuf[16] = {0};
+   5          
+   6          u8 smg[12] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f,0,0x71};// 0~9显示,"关闭显示"，“F”
+   7          
+   8          #define SMG_SHOW_OFF            10
+   9          
+  10          #define SMG_SHUTDOWN            0XFFFF  // 关显示传递的参数
+  11          
+  12          // 时间显示,以秒为单位
+  13          void Time_Show(u16 seconds)
+  14          {
+  15   1              if(seconds == 0xffff)
+  16   1              {
+  17   2                      smgbuf[6] = 0;
+  18   2                      smgbuf[7] = 0;
+  19   2                      smgbuf[8] = 0;
+  20   2                      smgbuf[9] = 0;          
+  21   2              }else
+  22   1              {
+  23   2                      // 变换成分
+  24   2                      u8 minutes = seconds/60;
+  25   2                      u8 sec = seconds%60;
+  26   2                      //if(seconds == 0xffff)
+  27   2                      smgbuf[6] = smg[(minutes%100)/10];
+  28   2                      smgbuf[7] = smg[minutes%10]|0x80;
+  29   2                      smgbuf[8] = smg[sec/10];
+  30   2                      smgbuf[9] = smg[sec%10];        
+  31   2              }
+  32   1              
+  33   1              
+  34   1      }
+  35          
+  36          // 温度显示，buf 012位显示温度
+  37          void Temp_Show(u16 temp)
+  38          {
+  39   1              if(temp == 0xffff)
+  40   1              {
+  41   2                      smgbuf[0] = 0;
+  42   2                      smgbuf[1] = 0;
+  43   2                      smgbuf[2] = 0;  
+  44   2              }else
+  45   1              {
+  46   2                      smgbuf[0] = smg[temp/100];
+  47   2                      smgbuf[1] = smg[(temp%100)/10];
+  48   2                      smgbuf[2] = smg[temp%10];
+  49   2              }
+  50   1      }
+  51          
+  52          // 蒸汽时间
+  53          void Steam_Show(u16 seconds)
+C51 COMPILER V9.00   SMG                                                                   11/24/2020 19:27:22 PAGE 2   
+
+  54          {
+  55   1              if(seconds == 0xffff)
+  56   1              {
+  57   2                      smgbuf[3] = 0;
+  58   2                      smgbuf[4] = 0;
+  59   2                      smgbuf[5] = 0;
+  60   2              }else
+  61   1              {
+  62   2                      smgbuf[3] = smg[(seconds%1000)/100];
+  63   2                      smgbuf[4] = smg[seconds%100/10];
+  64   2                      smgbuf[5] = smg[seconds%10];
+  65   2              }               
+  66   1      }
+  67          
+  68          // LED显示
+  69          // num是宏定义的第几个
+  70          // on_off 为 0,灭，为1亮
+  71          // smgbuf从【10】开始是led区域
+  72          void LED_Show(u8 num,u8 on_off)
+  73          {
+  74   1              
+  75   1              u8 bufpos;
+  76   1              u8 bufbit;
+  77   1              num --;
+  78   1              // 计算第几位
+  79   1              bufpos = 10 + num/8;
+  80   1              bufbit = num&0x07;
+  81   1              if(on_off)
+  82   1              {
+  83   2                      smgbuf[bufpos] |= 0x01<<bufbit;
+  84   2              }else
+  85   1              {
+  86   2                      smgbuf[bufpos] &= ~(0x01<<bufbit);
+  87   2              }
+  88   1              
+  89   1      }
+  90          
+  91          // 编程指示灯控制
+  92          void ProLED_Show(u8 on_off)
+  93          {
+  94   1              if(on_off)
+  95   1              {
+  96   2                      smgbuf[10] = 0xff;
+  97   2                      smgbuf[11] |= 0x0f;
+  98   2              }else
+  99   1              {
+ 100   2                      smgbuf[10] = 0;
+ 101   2                      smgbuf[11] &= 0xf0;
+ 102   2              }
+ 103   1      }
+ 104          // 按键LED全灭
+ 105          void Key_led_off()
+ 106          {
+ 107   1              smgbuf[10] = 0;
+ 108   1              smgbuf[11] = 0;
+ 109   1              smgbuf[12] = 0;
+ 110   1              smgbuf[13] = smgbuf[13]&0XF8;
+ 111   1      }
+ 112          
+ 113          void LedAlloff()
+ 114          {
+ 115   1              u8 i = 0;
+C51 COMPILER V9.00   SMG                                                                   11/24/2020 19:27:22 PAGE 3   
+
+ 116   1              for(i=0;i<16;i++)
+ 117   1              {
+ 118   2                      smgbuf[i]  = 0;
+ 119   2              }
+ 120   1      }
+ 121          
+ 122          // F 和风速 LED 显示
+ 123          void FAndFanLED_Show(u8 f,u8 fan)
+ 124          {
+ 125   1              smgbuf[13] = (smgbuf[13] & 0x0f) | (0x10 << fan);
+ 126   1              smgbuf[14] = (smgbuf[14] & 0xe0) | (0x01<<f);
+ 127   1      
+ 128   1      }
+ 129          
+ 130          // 点亮相应的MOD LED
+ 131          void LED_MOD_Select(u8 keyval)
+ 132          {
+ 133   1      
+ 134   1              if(keyval <= LED_MOD12 && keyval != 0)
+ 135   1              {
+ 136   2                      keyval --;
+ 137   2                      if(keyval < 8)
+ 138   2                      {
+ 139   3                              smgbuf[10] = 0x01 << keyval;
+ 140   3                              smgbuf[11] = 0;                 
+ 141   3                      }else
+ 142   2                      {
+ 143   3                              keyval -= 8;
+ 144   3                              smgbuf[11] = 0x01 << keyval;
+ 145   3                              smgbuf[10] = 0;                         
+ 146   3                      }
+ 147   2                      
+ 148   2      
+ 149   2              }
+ 150   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    627    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     28       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

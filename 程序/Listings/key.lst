@@ -1,0 +1,123 @@
+C51 COMPILER V9.00   KEY                                                                   11/24/2020 19:27:22 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\key.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\KEYSCAN\key.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSCAN;
+                    -.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBUG O
+                    -BJECTEXTEND PRINT(.\Listings\key.lst) OBJECT(.\Objects\key.obj)
+
+line level    source
+
+   1          #include "key.h"
+   2          #include "KEYSCAN.H"
+   3          #include "printf.h"
+   4          
+   5          
+   6          u32 Get_sys_time(void)  // 1ms为单位
+   7          {
+   8   1        extern u32 sys_time;
+   9   1        return sys_time;              //全局变量，1ms中断
+  10   1      }
+  11          /*****************************************************************************
+  12          函数名称 : Get_Key_Press_Time
+  13          功能描述 : 获取按键按下时间
+  14          输入参数 : last_time:上次按下时间
+  15          返回参数 : 2次按键之间差值
+  16          使用说明 : 无
+  17          *****************************************************************************/
+  18          static u32 Get_Key_Press_Time(u32 last_time)
+  19          {
+  20   1        return (u32)(Get_sys_time() - last_time);
+  21   1      }
+  22          
+  23          
+  24          // 回当前按下的键值
+  25          u8 Key_Scan(KEY_STATE_T* Key_State)
+  26          {
+  27   1              u32 time = 0;
+  28   1              u8 key = 0;
+  29   1              static unsigned char  flag=0;
+  30   1              
+  31   1              switch(Key_State->Status)
+  32   1              {
+  33   2                      case KEY_NO:
+  34   2                              Key_State->val = 0;
+  35   2                              key = KeyRead();  //查询有按键按下
+  36   2                              if(key)//说明有按键按下 此时的数值
+  37   2                              {
+  38   3                                      flag=0;
+  39   3                                      Key_State->Status = KEY_DOWN;
+  40   3                                      Key_State->Press_Time = Get_sys_time();
+  41   3                              }                               
+  42   2      
+  43   2                              break;
+  44   2                      case KEY_DOWN:
+  45   2                              if(flag==0)  // 只做一次检测
+  46   2                              {  //检索是哪个按键按下
+  47   3                                      flag=1; 
+  48   3                                      Key_State->key_val = KeyScan(); 
+  49   3                                      Key_State->Status = KEY_DOWN2;
+  50   3                              }
+  51   2                              break;
+  52   2                      case KEY_DOWN2:
+  53   2                              key = KeyRead();  //查询有按键按下
+C51 COMPILER V9.00   KEY                                                                   11/24/2020 19:27:22 PAGE 2   
+
+  54   2                              if(key==0)//说明当前的按键已被释放
+  55   2                              {
+  56   3                                      Key_State->Status = KEY_UP;
+  57   3                              }
+  58   2                              break;
+  59   2                      default:
+  60   2                              break;
+  61   2              }
+  62   1              if((Key_State->Status == KEY_DOWN2))
+  63   1              {
+  64   2                      Key_State->val_led = Key_State->key_val;
+  65   2                      time = Get_Key_Press_Time(Key_State->Press_Time);
+  66   2                      if(time >= TIME_PRESS_LONG && flag) //长按键
+  67   2                      {
+  68   3                              flag = 0;
+  69   3                              Key_State->val = Key_State->key_val | LONG_PRESS;
+  70   3                      }else Key_State->val = 0;
+  71   2               
+  72   2               }
+  73   1               else if(Key_State->Status == KEY_UP)
+  74   1               {
+  75   2                      Key_State->Status = KEY_NO;
+  76   2                      time = Get_Key_Press_Time(Key_State->Press_Time);
+  77   2                      Key_State->Press_Time = 0;
+  78   2                      if((time >= TIME_PRESS_SHORT) && (time < TIME_PRESS_LONG)) //短按键
+  79   2                      {                       
+  80   3                              Key_State->val = Key_State->key_val;
+  81   3                              
+  82   3                      }
+  83   2                      Key_State->key_val = 0;
+  84   2                      Key_State->val_led |= 0x80;
+  85   2               }      
+  86   1              
+  87   1      
+  88   1              return Key_State->val;
+  89   1      }
+  90          
+  91          
+  92                  
+  93                  
+  94                  
+  95                  
+  96                  
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    533    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      1      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

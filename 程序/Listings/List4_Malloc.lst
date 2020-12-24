@@ -1,0 +1,226 @@
+C51 COMPILER V9.00   LIST4_MALLOC                                                          11/24/2020 19:27:24 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE LIST4_MALLOC
+OBJECT MODULE PLACED IN .\Objects\List4_Malloc.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\List4_Malloc.C LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSCAN
+                    -;.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Listings\List4_Malloc.lst) OBJECT(.\Objects\List4_Malloc.obj)
+
+line level    source
+
+   1          #include "List4_Malloc.H"
+   2          
+   3          list4Message list4mess = {0};     // ±£´æÄÚ´æ³ØÐÅÏ¢
+   4          u8  list4mallocArray[MAX_MALLOCSIZE]  = {0} ;//__attribute__((at(0x20000000)))
+   5          
+   6          /**
+   7           *  ³õÊ¼»¯
+   8           *  ¸øÒ»Æ¬ÄÚ´æ×÷Îª¶¯Ì¬ÉêÇëÇø£¬¶Ñ
+   9           */
+  10          void List4_Malloc_Init(list4Message* mess,u8* mallocAddr,List4Type length)
+  11          {
+  12   1          mess->startAddr = mallocAddr;
+  13   1          mess->endAddr = mallocAddr + length;
+  14   1          mess->miniAddr = mallocAddr;
+  15   1          mess->sizeStr = sizeof(list4Str); 
+  16   1      //      printf("mess->sizeStr = %x\r\n",mess->sizeStr); 
+  17   1          ((list4Str*)mallocAddr)->offset = length;
+  18   1          ((list4Str*)mallocAddr)->blocksize = length - mess->sizeStr;
+  19   1      //    printf("mess->startAddr = %x\r\n",(u32)mess->startAddr);
+  20   1      //    printf("mess->endAddr = %x\r\n",(u32)mess->endAddr);
+  21   1      //    printf("length = %d\r\n",(u32)(mess->endAddr - mess->startAddr));
+  22   1      }
+  23          
+  24          
+  25          //ÄÚ´æÁ´±íÖÐ°´ÕÕ´óÐ¡Ë³Ðò£¬²åÈëÒ»¸ö¿é
+  26          void List4_InsertBlock(list4Message* mess,u8* addr)
+  27          {
+  28   1          list4Str* current = (list4Str*)mess->miniAddr;  // µ±Ç°Ö¸ÏòµÄÄÚ´æÇø£¬¸Ã±äÁ¿ÔÚºóÃæ»á±»µü´ú
+  29   1          list4Str* thisaddr = (list4Str*)addr;           // Ö¸ÏòËùÒª²åÈëµÄÄÚ´æ
+  30   1          list4Str* back = 0;                             // µü´ú¹ý³ÌÖÐµÄÄÚ´æµØÖ·±¸·Ý
+  31   1          if(mess->miniAddr == mess->endAddr)
+  32   1          {
+  33   2              mess->miniAddr = addr;
+  34   2              ((list4Str*)addr)->offset = mess->endAddr - mess->startAddr;
+  35   2              return;
+  36   2          }
+  37   1          while(thisaddr->blocksize > current->blocksize)    // Ñ°ÕÒ±ÈÕâ¸ö¿é´óµÄ¿éµØÖ·
+  38   1          {
+  39   2              if((mess->startAddr + current->offset) == mess->endAddr) // ²åÈëµÄ¿éÊÇ×î´óµÄ
+  40   2              {
+  41   3                  current->offset = addr - mess->startAddr;
+  42   3                  thisaddr->offset =  mess->endAddr - mess->startAddr ;
+  43   3                  return;
+  44   3              }
+  45   2              back = current;
+  46   2              current = (list4Str*)(mess->startAddr + current->offset);      
+  47   2          }
+  48   1          if((u8*)current == mess->miniAddr)
+  49   1          {
+  50   2              mess->miniAddr = (u8*)thisaddr;
+  51   2              thisaddr->offset = (u8*)current - mess->startAddr;
+  52   2          }else
+  53   1          {
+C51 COMPILER V9.00   LIST4_MALLOC                                                          11/24/2020 19:27:24 PAGE 2   
+
+  54   2              thisaddr->offset = (u8*)current - mess->startAddr;
+  55   2              back->offset = (u8*)thisaddr - mess->startAddr;
+  56   2          }
+  57   1      }
+  58          
+  59          /**
+  60           *  ÄÚ´æÉêÇë
+  61           */
+  62          void* List4_Malloc(list4Message* mess,List4Type length)
+  63          {
+  64   1          list4Str* current = (list4Str*)mess->miniAddr;      // µ±Ç°Ö¸ÏòµÄÄÚ´æÇø£¬¸Ã±äÁ¿ÔÚºóÃæ»á±»µü´ú
+  65   1          list4Str* back = current;                           // µü´ú¹ý³ÌÖÐµÄÄÚ´æµØÖ·±¸·Ý
+  66   1          
+  67   1          if(mess->miniAddr == mess->endAddr) 
+  68   1          {
+  69   2            //  List4_Malloc_Log("ÄÚ´æÂú,ÎÞÄÚ´æ¿ÉÒÔ·ÖÅä\r\n");
+  70   2              return 0;                                       // ÎÞÄÚ´æ¿é¿ÉÉêÇë
+  71   2          }
+  72   1              
+  73   1          while(current->blocksize  < (length))
+  74   1          {
+  75   2              back = current;
+  76   2              current = (list4Str*)(mess->startAddr + current->offset);       // ÕÒÏÂÒ»¸öÄÚ´æ¿é
+  77   2              if((u8*)current == mess->endAddr)
+  78   2              {
+  79   3                 // List4_Malloc_Log("ÎÞÄÚ´æ¿ÉÒÔ·ÖÅä\r\n");
+  80   3                              printf("ÉêÇë´óÐ¡:%d\r\n",length);
+  81   3                              
+  82   3                  return 0;                                   // ÕÒµ½×îºó
+  83   3              } 
+  84   2          } 
+  85   1          back->offset =  current->offset;                    // currentµØÖ·½«±»·ÖÅä³öÈ¥£¬back¼ÇÂ¼ÏÂÒ»¸öµØÖ·£¬Ïà
+             -µ±ÓÚ½«currentÖ¸ÏòµÄ¿é´ÓÁ´±íÖÐÈ¡ÏÂ   
+  86   1          if(current->blocksize > length + mess->sizeStr)     // ¸Ã¿é±»²ð·Ö³ÉÁ½²¿·Ö£¬Ò»²¿·Ö·ÖÅäµô£¬ÁíÒ»²¿·Ö±ä³ÉÐ
+             -Â¿é²åÈëµ½Á´±íÖÐ
+  87   1          {
+  88   2              //bakc×öÖÐ¼ä´æ´¢£¬Ìî³äÐÂµÄ¿éÐÅÏ¢£¬²¢½«Æä°´ÕÕ´óÐ¡²åÈëµ½Á´±í
+  89   2              back = (list4Str*)((u8*)current + mess->sizeStr + length);
+  90   2              back->blocksize = current->blocksize - mess->sizeStr - length;
+  91   2              if(mess->miniAddr == (u8*)current) 
+  92   2              {
+  93   3                  mess->miniAddr = (u8*)back;
+  94   3                  back->offset = current->offset;
+  95   3              }else  List4_InsertBlock(mess,(u8*)back); 
+  96   2              current->blocksize = length;                    //¼ÇÂ¼¸ÃÄÚ´æµÄ´óÐ¡
+  97   2          }else   // ¸Ã¿éÖ»¹»·ÖÅäµÄ
+  98   1          {
+  99   2              current->blocksize = length;                    //¼ÇÂ¼¸ÃÄÚ´æµÄ´óÐ¡
+ 100   2              if(mess->miniAddr == (u8*)current) mess->miniAddr = mess->startAddr + current->offset;
+ 101   2          }
+ 102   1              // printf("malloc addr= %x\r\n",(u32)((u8*)current + mess->sizeStr));
+ 103   1          return (void*)((u8*)current + mess->sizeStr);
+ 104   1      }
+ 105          
+ 106          
+ 107          /**
+ 108           *  ÄÚ´æÊÍ·Å
+ 109           */
+ 110          void List4_Free(list4Message* mess,void* addr)
+ 111          {
+ 112   1          list4Str* current = (list4Str*)mess->miniAddr;                  // µ±Ç°Ö¸ÏòµÄÄÚ´æÇø£¬¸Ã±äÁ¿ÔÚºóÃæ»á±»µ
+             -ü´ú
+C51 COMPILER V9.00   LIST4_MALLOC                                                          11/24/2020 19:27:24 PAGE 3   
+
+ 113   1          list4Str* thisaddr = (list4Str*)((u8*)addr - mess->sizeStr);    // Ö¸ÏòËùÒª²åÈëµÄÄÚ´æ 
+ 114   1          list4Str* back = current;                                       // µü´ú¹ý³ÌÖÐµÄÄÚ´æµØÖ·±¸·Ý    
+ 115   1          list4Str* pbefor = 0;                                           // ±£´æÇ°¿éµØÖ·
+ 116   1          list4Str* pback = 0;                                            // ±£´æºó¿éµØÖ·
+ 117   1        //  printf("free addr = %x\r\n",(u32)addr);
+ 118   1          // ·¶Î§ÅÐ¶Ï
+ 119   1          if((u32)(u8*)addr < (u32)(mess->startAddr + mess->sizeStr) || (u32)((u8*)addr + thisaddr->blocksize) >
+             - (u32)mess->endAddr)
+ 120   1          {
+ 121   2              printf("free erro,addr= %x\r\n",(u32)addr);
+ 122   2              return ;                   
+ 123   2          }
+ 124   1          while((u8*)current != mess->endAddr)        // Ñ°ÕÒÔÚËüÖ®Ç°ÓÐÃ»ÓÐÒ»¸ö¿é
+ 125   1          {
+ 126   2              if(GETSTR_NEXTADDR(current) == (u8*)thisaddr)
+ 127   2              {
+ 128   3                  //´ÓÁ´±íÕªÏÂ
+ 129   3                  pbefor = current;
+ 130   3                  if((list4Str*)mess->miniAddr == current) mess->miniAddr = mess->startAddr + current->offset;
+ 131   3                  if(back != current) back->offset = current->offset;
+ 132   3                  break;
+ 133   3              }
+ 134   2              back = current;
+ 135   2              current = (list4Str*)(mess->startAddr + current->offset);
+ 136   2          }
+ 137   1      
+ 138   1          // Ö¸Õë¸´Î»
+ 139   1          current = (list4Str*)mess->miniAddr;
+ 140   1          back = current;
+ 141   1          while((u8*)current != mess->endAddr)        // Ñ°ÕÒÔÚËüÖ®ºóÓÐÃ»ÓÐÒ»¸ö¿é
+ 142   1          {
+ 143   2              if(GETSTR_NEXTADDR(thisaddr) == (u8*)current)
+ 144   2              {
+ 145   3                  //´ÓÁ´±íÕªÏÂ
+ 146   3                  pback = current;
+ 147   3                  if((list4Str*)mess->miniAddr == current) mess->miniAddr = mess->startAddr + current->offset;
+ 148   3                  if(back != current) back->offset = current->offset;
+ 149   3                  break;
+ 150   3              }
+ 151   2              back = current;
+ 152   2              current = (list4Str*)(mess->startAddr + current->offset); 
+ 153   2          }
+ 154   1      
+ 155   1          if(pbefor || pback)// Èç¹ûÓÐ,ÔòºÏ³ÉÐÂ¿é
+ 156   1          {
+ 157   2              if(pback)
+ 158   2              {
+ 159   3                  thisaddr->blocksize += pback->blocksize + mess->sizeStr;
+ 160   3              }
+ 161   2              if(pbefor)
+ 162   2              {
+ 163   3                  pbefor->blocksize += thisaddr->blocksize + mess->sizeStr;
+ 164   3                  thisaddr = pbefor;
+ 165   3              }
+ 166   2          }
+ 167   1          List4_InsertBlock(mess,(u8*)thisaddr);// ²åÈëµ½Á´±íÖÐ
+ 168   1              //printf("mess->miniAddr = %x\r\n",(u32)mess->miniAddr);
+ 169   1      }
+ 170          
+ 171          // ½«ÄÚ´æÇåÁã
+ 172          void ClearMalloc(void* pdat,u32 length)
+ 173          {
+C51 COMPILER V9.00   LIST4_MALLOC                                                          11/24/2020 19:27:24 PAGE 4   
+
+ 174   1              u32 i = 0;
+ 175   1              u32 temp = length/sizeof(u32);
+ 176   1              u8* pd = (u8*)pdat;
+ 177   1              for(i=0;i<temp;i++) ((u32*)pd)[i] = 0;
+ 178   1              i *= sizeof(u32);
+ 179   1              for(;i<length;i++) pd[i] = 0;
+ 180   1      
+ 181   1      }
+ 182          // ÇåÁãÉêÇëÄÚ´æ
+ 183          void* List4_Malloc_Zero(list4Message* mess,List4Type length)
+ 184          {
+ 185   1              void* pdat = List4_Malloc(mess,length);
+ 186   1              if(pdat)
+ 187   1              {
+ 188   2                      ClearMalloc(pdat,length);
+ 189   2              }
+ 190   1              return pdat;
+ 191   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3623    ----
+   CONSTANT SIZE    =     35    ----
+   XDATA SIZE       =    529      78
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

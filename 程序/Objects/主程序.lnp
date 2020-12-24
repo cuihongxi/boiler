@@ -1,0 +1,5 @@
+".\Objects\main.obj",
+".\Objects\KEYSCAN.obj",
+".\Objects\TM1640.obj" 
+TO ".\Objects\主程序" 
+PRINT(".\Listings\主程序.m51") RAMSIZE(256) 

@@ -1,0 +1,294 @@
+C51 COMPILER V9.00   ADDPROCESSTASK                                                        11/24/2020 19:27:23 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE ADDPROCESSTASK
+OBJECT MODULE PLACED IN .\Objects\addProcessTask.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\TAST\addProcessTask.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\
+                    -KEYSCAN;.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST)
+                    - DEBUG OBJECTEXTEND PRINT(.\Listings\addProcessTask.lst) OBJECT(.\Objects\addProcessTask.obj)
+
+line level    source
+
+   1          #include "addProcessTask.h"
+   2          #include "eeprom.h"
+   3          
+   4          extern sysParam pa;
+   5          twinkleSMG twinkel = {0};       // 闪烁
+   6          
+   7          
+   8          // 键值对应函数结构
+   9          typedef struct 
+  10          {
+  11                  u8 keyval;
+  12                  void(*keyFun)(void);
+  13          }keyValFun;
+  14          
+  15          void ClearFlash(void)
+  16          {
+  17   1              u16 i = 0;
+  18   1              EEPROM_write_Zero(ADDR_NORMAL);
+  19   1              EEPROM_write_Zero(ADDR_GROUP1);
+  20   1              EEPROM_write_Zero(ADDR_GROUP1 + 512);
+  21   1      }
+  22          // 初始化
+  23          void GroupDatInit()
+  24          {
+  25   1          u8 initdat = 0;
+  26   1              pa.prodat.groupnum = 0;
+  27   1          pa.prodat.setnum = 0;
+  28   1          flashRead(ADDR_INIT,&initdat,1);
+  29   1          if(initdat != INIT_DAT)     // 第一次上电，未被初始化
+  30   1              {
+  31   2                      initdat = INIT_DAT;
+  32   2                      flashSave(ADDR_INIT,&initdat,1);
+  33   2                      // 全部初始化为0
+  34   2                      ClearFlash();   
+  35   2                      debug("INIT_DAT\r\n");
+  36   2              }
+  37   1              
+  38   1              if(flashRead(ADDR_NORMAL,(u8*)&pa.prodat.set[0],SET_SIZE))
+  39   1                      debug("flashread ADDR_NORMAL erro\r\n");// 读flash数据
+  40   1      }
+  41          
+  42          // KEYTIME_ADD 函数
+  43          void Fun_KeyTimeAdd( )
+  44          {
+  45   1              pa.prodat.set[pa.prodat.setnum].worktime ++;
+  46   1      }
+  47          
+  48          // KEYTIME_SUB 函数
+  49          void Fun_KeyTimeSub( )
+  50          {
+  51   1              if(pa.prodat.set[pa.prodat.setnum].worktime)
+  52   1                      pa.prodat.set[pa.prodat.setnum].worktime --;
+  53   1      }
+C51 COMPILER V9.00   ADDPROCESSTASK                                                        11/24/2020 19:27:23 PAGE 2   
+
+  54          
+  55          // TEMPADD 
+  56          void Fun_KeyTempAdd( )
+  57          {
+  58   1              pa.prodat.set[pa.prodat.setnum].settemp ++;
+  59   1      }
+  60          
+  61          // TEMPSUB 
+  62          void Fun_KeyTempSub( )
+  63          {
+  64   1              if(pa.prodat.set[pa.prodat.setnum].settemp)
+  65   1                      pa.prodat.set[pa.prodat.setnum].settemp --;
+  66   1      }
+  67          
+  68          // STEAMADD 
+  69          void Fun_KeySteamAdd( )
+  70          {
+  71   1              pa.prodat.set[pa.prodat.setnum].steamtime ++;
+  72   1      }
+  73          
+  74          // STEAMSUB 
+  75          void Fun_KeySteamSub( )
+  76          {
+  77   1              if(pa.prodat.set[pa.prodat.setnum].steamtime)
+  78   1                      pa.prodat.set[pa.prodat.setnum].steamtime --;
+  79   1      
+  80   1      }
+  81          
+  82          // FUNADD 
+  83          void Fun_KeyFunAdd( )
+  84          {
+  85   1              pa.prodat.set[pa.prodat.setnum].funspeed ++;
+  86   1              pa.prodat.set[pa.prodat.setnum].funspeed %= 4;
+  87   1              printf("$ setnum = %d ",pa.prodat.setnum);
+  88   1              printf("$ funspeed = %d\r\n",pa.prodat.set[pa.prodat.setnum].funspeed);
+  89   1      }
+  90          
+  91          
+  92          
+  93          // 数值保存按键
+  94          void Fun_KeySave( )
+  95          {
+  96   1              flashSave(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 保存设定参数
+  97   1              //pa.prodat.setnum = 0;
+  98   1              //pa.prodat.groupnum = 0;
+  99   1              debug("flash save\r\n");
+ 100   1      }
+ 101          
+ 102          // GROUP_1  设定1套按键
+ 103          void Fun_KeyGroup1( )
+ 104          {
+ 105   1              pa.prodat.groupnum = 0;
+ 106   1              pa.prodat.setnum = 0;
+ 107   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 108   1      
+ 109   1      }
+ 110          
+ 111          //   设定2套按键
+ 112          void Fun_KeyGroup2( )
+ 113          {
+C51 COMPILER V9.00   ADDPROCESSTASK                                                        11/24/2020 19:27:23 PAGE 3   
+
+ 114   1              pa.prodat.groupnum = 1;
+ 115   1              pa.prodat.setnum = 0;
+ 116   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 117   1      }
+ 118          //   设定3套按键
+ 119          void Fun_KeyGroup3( )
+ 120          {
+ 121   1              pa.prodat.groupnum = 2;
+ 122   1              pa.prodat.setnum = 0;
+ 123   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 124   1      }
+ 125          //   设定4套按键
+ 126          void Fun_KeyGroup4( )
+ 127          {
+ 128   1              pa.prodat.groupnum = 3;
+ 129   1              pa.prodat.setnum = 0;
+ 130   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 131   1      }
+ 132          //   设定5套按键
+ 133          void Fun_KeyGroup5( )
+ 134          {
+ 135   1              pa.prodat.groupnum = 4;
+ 136   1              pa.prodat.setnum = 0;
+ 137   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 138   1      }
+ 139          //   设定6套按键
+ 140          void Fun_KeyGroup6( )
+ 141          {
+ 142   1              pa.prodat.groupnum = 5;
+ 143   1              pa.prodat.setnum = 0;
+ 144   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 145   1      }
+ 146          //   设定7套按键
+ 147          void Fun_KeyGroup7( )
+ 148          {
+ 149   1              pa.prodat.groupnum = 6;
+ 150   1              pa.prodat.setnum = 0;
+ 151   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 152   1      }
+ 153          //   设定8套按键
+ 154          void Fun_KeyGroup8( )
+ 155          {
+ 156   1              pa.prodat.groupnum = 7;
+ 157   1              pa.prodat.setnum = 0;
+ 158   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 159   1      }
+ 160          
+ 161          //   设定9套按键
+ 162          void Fun_KeyGroup9( )
+ 163          {
+ 164   1              pa.prodat.groupnum = 8;
+ 165   1              pa.prodat.setnum = 0;
+ 166   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 167   1      }
+C51 COMPILER V9.00   ADDPROCESSTASK                                                        11/24/2020 19:27:23 PAGE 4   
+
+ 168          
+ 169          //   设定10套按键
+ 170          void Fun_KeyGroup10( )
+ 171          {
+ 172   1              pa.prodat.groupnum = 9;
+ 173   1              pa.prodat.setnum = 0;
+ 174   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 175   1      }
+ 176          
+ 177          //   设定11套按键
+ 178          void Fun_KeyGroup11( )
+ 179          {
+ 180   1              pa.prodat.groupnum = 10;
+ 181   1              pa.prodat.setnum = 0;
+ 182   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 183   1      }
+ 184          
+ 185          //   设定12套按键
+ 186          void Fun_KeyGroup12( )
+ 187          {
+ 188   1              pa.prodat.groupnum = 11;
+ 189   1              pa.prodat.setnum = 0;
+ 190   1              flashRead(ADDR_GROUP1 + (SET_NUM*pa.prodat.groupnum)*SET_SIZE,(u8*)&pa.prodat.set[0],SET_SIZE * SET_NUM);
+             -// 读参数
+ 191   1      }
+ 192          
+ 193          // F按键
+ 194          void Fun_KeyF( )
+ 195          {
+ 196   1              pa.prodat.setnum ++;
+ 197   1              pa.prodat.setnum %= SET_NUM;
+ 198   1              printf("# setnum = %d ",pa.prodat.setnum);
+ 199   1              printf("# funspeed = %d\r\n",pa.prodat.set[pa.prodat.setnum].funspeed);
+ 200   1      }
+ 201          static keyValFun keyArray[] = {
+ 202                  TIMEADD,        Fun_KeyTimeAdd,
+ 203                  TIMESUB,        Fun_KeyTimeSub,
+ 204                  TEMPADD,        Fun_KeyTempAdd,
+ 205                  TEMPSUB,        Fun_KeyTempSub,
+ 206                  SAVEDAT,        Fun_KeySave,
+ 207                  GROUP_1,        Fun_KeyGroup1,
+ 208                  GROUP_2,        Fun_KeyGroup2,
+ 209                  GROUP_3,        Fun_KeyGroup3,
+ 210                  GROUP_4,        Fun_KeyGroup4,
+ 211                  GROUP_5,        Fun_KeyGroup5,
+ 212                  GROUP_6,        Fun_KeyGroup6,
+ 213                  GROUP_7,        Fun_KeyGroup7,
+ 214                  GROUP_8,        Fun_KeyGroup8,
+ 215                  GROUP_9,        Fun_KeyGroup9,
+ 216                  GROUP_10,       Fun_KeyGroup10,
+ 217                  GROUP_11,       Fun_KeyGroup11,
+ 218                  GROUP_12,       Fun_KeyGroup12,
+ 219                  STEAMADD,       Fun_KeySteamAdd,
+ 220                  STEAMSUB,       Fun_KeySteamSub,
+ 221                  FUNADD,         Fun_KeyFunAdd,
+ 222                  F_ADD,          Fun_KeyF,
+ 223                  
+ 224          };
+ 225          // 按键扫描，根据键值执行对应的函数
+ 226          void Fun_KeyFun(u8 keyval)
+C51 COMPILER V9.00   ADDPROCESSTASK                                                        11/24/2020 19:27:23 PAGE 5   
+
+ 227          {
+ 228   1              u16 i = 0;
+ 229   1              for(i=0;i<GETSIZE(keyArray);i++)
+ 230   1              {
+ 231   2                      if(keyArray[i].keyval == keyval) keyArray[i].keyFun();
+ 232   2              }
+ 233   1      }
+ 234          
+ 235          
+ 236          
+ 237          // 显示函数
+ 238          void Fun_ShowFun( )
+ 239          {
+ 240   1              ShowTime(pa.prodat.set[pa.prodat.setnum].worktime);             // 显示当前的时间
+ 241   1              ShowTemp(pa.prodat.set[pa.prodat.setnum].settemp);              // 显示当前温度
+ 242   1              ShowSteam(pa.prodat.set[pa.prodat.setnum].steamtime);   // 显示蒸汽时间
+ 243   1      
+ 244   1              // F 和风速数码管显示
+ 245   1              FAndFanLED_Show(pa.prodat.setnum,pa.prodat.set[pa.prodat.setnum].funspeed);
+ 246   1      }
+ 247          
+ 248          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1254    ----
+   CONSTANT SIZE    =    119    ----
+   XDATA SIZE       =     90       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "KEYSCAN.C": "cpp",
+        "SMG.C": "cpp",
+        "List4_Malloc.C": "cpp"
+    }
+}

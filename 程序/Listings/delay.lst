@@ -1,0 +1,56 @@
+C51 COMPILER V9.00   DELAY                                                                 11/22/2020 09:47:51 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN .\Objects\delay.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\delay\delay.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSCAN;
+                    -.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBUG O
+                    -BJECTEXTEND PRINT(.\Listings\delay.lst) OBJECT(.\Objects\delay.obj)
+
+line level    source
+
+   1          #include <delay.h>
+   2          #include <STC8.H>
+   3          
+   4          void Delay1ms()         //@24.000MHz
+   5          {
+   6   1              unsigned char i, j;
+   7   1      
+   8   1              i = 24;
+   9   1              j = 85;
+  10   1              do
+  11   1              {
+  12   2                      while (--j);
+  13   2              } while (--i);
+  14   1      }
+  15          
+  16                  
+  17          void delay_ms(unsigned int t)
+  18          {
+  19   1              while(t --)Delay1ms();
+  20   1      }
+  21          
+  22          void Timer0Init(void)           //1毫秒@24.000MHz
+  23          {
+  24   1              AUXR |= 0x80;           //定时器时钟1T模式
+  25   1              TMOD &= 0xF0;           //设置定时器模式
+  26   1              TL0 = 0x40;                     //设置定时初值
+  27   1              TH0 = 0xA2;                     //设置定时初值
+  28   1              TF0 = 0;                        //清除TF0标志
+  29   1              TR0 = 1;                        //定时器0开始计时
+  30   1          ET0 = 1;           //使能定时器0中断
+  31   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     48    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

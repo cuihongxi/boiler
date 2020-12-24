@@ -1,0 +1,86 @@
+C51 COMPILER V9.00   UART                                                                  11/24/2020 19:27:21 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\Objects\uart.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\UART\STC8\uart.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSC
+                    -AN;.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBU
+                    -G OBJECTEXTEND PRINT(.\Listings\uart.lst) OBJECT(.\Objects\uart.obj)
+
+line level    source
+
+   1          #include<uart.h>
+   2          
+   3          bit busy = 0;               //清忙标志
+   4          
+   5          void UartInit(void)             //115200bps@24.000MHz
+   6          {
+   7   1              SCON = 0x50;            //8位数据,可变波特率
+   8   1              AUXR |= 0x40;           //定时器1时钟为Fosc,即1T
+   9   1              AUXR &= 0xFE;           //串口1选择定时器1为波特率发生器
+  10   1              TMOD &= 0x0F;           //设定定时器1为16位自动重装方式
+  11   1              TL1 = 0xCC;             //设定定时初值
+  12   1              TH1 = 0xFF;             //设定定时初值
+  13   1              ET1 = 0;                //禁止定时器1中断
+  14   1              TR1 = 1;                //启动定时器1
+  15   1      }
+  16          void UartStartIT(void)  // 用STC助手生成的代码UartInit，启动
+  17          {
+  18   1              UartInit();
+  19   1              ES = 1;                     //使能串口1中断
+  20   1              EA = 1;                                         //允许总中断
+  21   1      }
+  22          
+  23          void UARTSendByte(unsigned char byte)
+  24          {       
+  25   1         // TB8 = 0;                //设置校验位为0
+  26   1          busy = 1;
+  27   1              SBUF = byte;
+  28   1              while(busy);
+  29   1      }
+  30          void UARTSendStr(unsigned char* str)
+  31          {       
+  32   1          while (*str)     //遇到停止符0结束
+  33   1          {
+  34   2             UARTSendByte(*str ++);
+  35   2          }
+  36   1       }
+  37          
+  38          //========================================================================
+  39          // 函数: void UART1_int (void) interrupt UART1_VECTOR
+  40          // 描述: UART1中断函数。
+  41          // 参数: nine.
+  42          // 返回: none.
+  43          // 版本: VER1.0
+  44          // 日期: 2014-11-28
+  45          // 备注: 
+  46          //========================================================================
+  47          void UART1_int (void) interrupt 4
+  48          {
+  49   1          if(RI)
+  50   1          {
+  51   2              RI = 0;
+  52   2          }
+  53   1      
+C51 COMPILER V9.00   UART                                                                  11/24/2020 19:27:21 PAGE 2   
+
+  54   1          if(TI)
+  55   1          {
+  56   2              TI = 0;
+  57   2                      busy = 0;               //清忙标志
+  58   2          }
+  59   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    103    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

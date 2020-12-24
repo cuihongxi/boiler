@@ -1,0 +1,476 @@
+BL51 BANKED LINKER/LOCATER V6.22                                                        10/06/2020  19:27:12  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL_V5\C51\BIN\BL51.EXE .\Objects\main.obj, .\Objects\KEYSCAN.obj, .\Objects\TM1640.obj TO .\Objects\主程序 PRINT (.
+>> \Listings\主程序.m51) RAMSIZE (256)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  .\Objects\main.obj (MAIN)
+  .\Objects\KEYSCAN.obj (KEYSCAN)
+  .\Objects\TM1640.obj (TM1640)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_STARTUP)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?CLDOPTR)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?ICASE)
+
+
+LINK MAP OF MODULE:  .\Objects\主程序 (MAIN)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0006H     UNIT         ?DT?_TM1640_ATOSHOW?TM1640
+            IDATA   000EH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     017CH     UNIT         ?PR?KEYSCAN?KEYSCAN
+            CODE    017FH     006EH     UNIT         ?PR?_SET_VALU?KEYSCAN
+            CODE    01EDH     005AH     UNIT         ?C?LIB_CODE
+            CODE    0247H     0050H     UNIT         ?PR?_TM1640_ATOSHOW?TM1640
+            CODE    0297H     0044H     UNIT         ?PR?READ_VALU?KEYSCAN
+            CODE    02DBH     002AH     UNIT         ?PR?_BYTE_1640?TM1640
+            CODE    0305H     001DH     UNIT         ?PR?_GPIO_HENG_MOED_SET?KEYSCAN
+            CODE    0322H     0019H     UNIT         ?PR?_GPIO_LIE_MOED_SET?KEYSCAN
+            CODE    033BH     000CH     UNIT         ?C_C51STARTUP
+            CODE    0347H     000AH     UNIT         ?PR?KEY_GPIO_INIT?KEYSCAN
+            CODE    0351H     0009H     UNIT         ?PR?START_1640?TM1640
+            CODE    035AH     0009H     UNIT         ?PR?STOP_1640?TM1640
+            CODE    0363H     0007H     UNIT         ?PR?MAIN?MAIN
+
+
+
+OVERLAY MAP OF MODULE:   .\Objects\主程序 (MAIN)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?MAIN
+
+?PR?MAIN?MAIN
+  +--> ?PR?KEY_GPIO_INIT?KEYSCAN
+
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 2
+
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\主程序 (MAIN)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        MAIN
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  B:0090H.2       PUBLIC        beep
+  D:00D8H         PUBLIC        CCON
+  C:0363H         PUBLIC        main
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          MAIN
+  C:0363H         LINE#         5
+  C:0363H         LINE#         6
+  C:0363H         LINE#         7
+  C:0366H         LINE#         8
+  C:0368H         LINE#         9
+  C:0368H         LINE#         10
+  C:0368H         LINE#         12
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        MAIN
+
+  -------         MODULE        KEYSCAN
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0093H         PUBLIC        P0M1
+  D:0096H         PUBLIC        P2M0
+  D:0080H         PUBLIC        P0
+  C:0322H         PUBLIC        _GPIO_Lie_MOED_SET
+  D:0095H         PUBLIC        P2M1
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        CCON
+  C:017FH         PUBLIC        _Set_Valu
+  C:0347H         PUBLIC        Key_GPIO_Init
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 3
+
+
+  B:0080H.0       PUBLIC        SH1
+  B:0080H.1       PUBLIC        SH2
+  B:0080H.2       PUBLIC        SH3
+  B:0080H.3       PUBLIC        SH4
+  B:00A0H.2       PUBLIC        SL1
+  B:0080H.4       PUBLIC        SH5
+  B:00A0H.4       PUBLIC        SL2
+  B:0080H.5       PUBLIC        SH6
+  C:0003H         PUBLIC        Keyscan
+  B:00A0H.1       PUBLIC        SL3
+  B:00A0H.6       PUBLIC        SL4
+  B:00A0H.7       PUBLIC        SL5
+  C:0305H         PUBLIC        _GPIO_Heng_MOED_SET
+  C:0297H         PUBLIC        Read_Valu
+  D:00D0H         PUBLIC        PSW
+  D:0094H         PUBLIC        P0M0
+  -------         PROC          KEY_GPIO_INIT
+  C:0347H         LINE#         4
+  C:0347H         LINE#         5
+  C:0347H         LINE#         6
+  C:034AH         LINE#         7
+  C:034CH         LINE#         8
+  C:034EH         LINE#         9
+  C:0350H         LINE#         11
+  -------         ENDPROC       KEY_GPIO_INIT
+  -------         PROC          _SET_VALU
+  D:0006H         SYMBOL        dat
+  C:017FH         LINE#         14
+  C:017FH         LINE#         15
+  C:017FH         LINE#         16
+  C:0187H         LINE#         17
+  C:0189H         LINE#         18
+  C:0191H         LINE#         19
+  C:0193H         LINE#         20
+  C:019BH         LINE#         21
+  C:019DH         LINE#         22
+  C:01A5H         LINE#         23
+  C:01A7H         LINE#         24
+  C:01AFH         LINE#         25
+  C:01B1H         LINE#         27
+  C:01B9H         LINE#         28
+  C:01BBH         LINE#         29
+  C:01C3H         LINE#         30
+  C:01C5H         LINE#         31
+  C:01CDH         LINE#         32
+  C:01CFH         LINE#         33
+  C:01D7H         LINE#         34
+  C:01D9H         LINE#         35
+  C:01E1H         LINE#         36
+  C:01E3H         LINE#         37
+  C:01EAH         LINE#         38
+  C:01ECH         LINE#         39
+  -------         ENDPROC       _SET_VALU
+  -------         PROC          READ_VALU
+  -------         DO            
+  D:0006H         SYMBOL        dat
+  -------         ENDDO         
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 4
+
+
+  C:0297H         LINE#         42
+  C:0297H         LINE#         43
+  C:0297H         LINE#         44
+  C:029AH         LINE#         46
+  C:029EH         LINE#         47
+  C:02A4H         LINE#         48
+  C:02AAH         LINE#         49
+  C:02B0H         LINE#         50
+  C:02B6H         LINE#         52
+  C:02BCH         LINE#         53
+  C:02C2H         LINE#         54
+  C:02C8H         LINE#         55
+  C:02CEH         LINE#         56
+  C:02D4H         LINE#         57
+  C:02DAH         LINE#         59
+  C:02DAH         LINE#         60
+  -------         ENDPROC       READ_VALU
+  -------         PROC          _GPIO_HENG_MOED_SET
+  D:0007H         SYMBOL        GPIOMODE
+  C:0305H         LINE#         62
+  C:0305H         LINE#         63
+  C:0305H         LINE#         64
+  C:0308H         LINE#         65
+  C:0308H         LINE#         66
+  C:030AH         LINE#         67
+  C:030CH         LINE#         68
+  C:030EH         LINE#         69
+  C:0310H         LINE#         70
+  C:0312H         LINE#         71
+  C:0314H         LINE#         72
+  C:0315H         LINE#         73
+  C:0315H         LINE#         74
+  C:0317H         LINE#         75
+  C:0319H         LINE#         76
+  C:031BH         LINE#         77
+  C:031DH         LINE#         78
+  C:031FH         LINE#         79
+  C:0321H         LINE#         80
+  C:0321H         LINE#         81
+  -------         ENDPROC       _GPIO_HENG_MOED_SET
+  -------         PROC          _GPIO_LIE_MOED_SET
+  D:0007H         SYMBOL        GPIOMODE
+  C:0322H         LINE#         83
+  C:0322H         LINE#         84
+  C:0322H         LINE#         85
+  C:0325H         LINE#         86
+  C:0325H         LINE#         87
+  C:0327H         LINE#         88
+  C:0329H         LINE#         89
+  C:032BH         LINE#         90
+  C:032DH         LINE#         91
+  C:032FH         LINE#         92
+  C:0330H         LINE#         93
+  C:0330H         LINE#         94
+  C:0332H         LINE#         95
+  C:0334H         LINE#         96
+  C:0336H         LINE#         97
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 5
+
+
+  C:0338H         LINE#         98
+  C:033AH         LINE#         99
+  C:033AH         LINE#         100
+  -------         ENDPROC       _GPIO_LIE_MOED_SET
+  -------         PROC          KEYSCAN
+  -------         DO            
+  D:0004H         SYMBOL        KeyPort
+  -------         ENDDO         
+  C:0003H         LINE#         102
+  C:0003H         LINE#         103
+  C:0003H         LINE#         104
+  C:0006H         LINE#         105
+  C:000AH         LINE#         106
+  C:000EH         LINE#         107
+  C:001AH         LINE#         108
+  C:001AH         LINE#         110
+  C:0021H         LINE#         111
+  C:002AH         LINE#         112
+  C:002AH         LINE#         113
+  C:002FH         LINE#         114
+  C:0033H         LINE#         115
+  C:0059H         LINE#         116
+  C:0059H         LINE#         117
+  C:0059H         LINE#         118
+  C:0060H         LINE#         119
+  C:0082H         LINE#         120
+  C:0082H         LINE#         121
+  C:0085H         LINE#         122
+  C:0085H         LINE#         123
+  C:0088H         LINE#         124
+  C:0088H         LINE#         125
+  C:008BH         LINE#         126
+  C:008BH         LINE#         127
+  C:008EH         LINE#         128
+  C:008EH         LINE#         129
+  C:0091H         LINE#         130
+  C:0091H         LINE#         131
+  C:0094H         LINE#         132
+  C:0094H         LINE#         133
+  C:0094H         LINE#         134
+  C:0094H         LINE#         135
+  C:0094H         LINE#         136
+  C:009BH         LINE#         137
+  C:00BDH         LINE#         138
+  C:00BDH         LINE#         139
+  C:00C0H         LINE#         140
+  C:00C0H         LINE#         141
+  C:00C3H         LINE#         142
+  C:00C3H         LINE#         143
+  C:00C6H         LINE#         144
+  C:00C6H         LINE#         145
+  C:00C9H         LINE#         146
+  C:00C9H         LINE#         147
+  C:00CCH         LINE#         148
+  C:00CCH         LINE#         149
+  C:00CFH         LINE#         150
+  C:00CFH         LINE#         151
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 6
+
+
+  C:00CFH         LINE#         152
+  C:00CFH         LINE#         153
+  C:00CFH         LINE#         154
+  C:00D6H         LINE#         155
+  C:00F8H         LINE#         156
+  C:00F8H         LINE#         157
+  C:00FBH         LINE#         158
+  C:00FBH         LINE#         159
+  C:00FEH         LINE#         160
+  C:00FEH         LINE#         161
+  C:0101H         LINE#         162
+  C:0101H         LINE#         163
+  C:0104H         LINE#         164
+  C:0104H         LINE#         165
+  C:0107H         LINE#         166
+  C:0107H         LINE#         167
+  C:010AH         LINE#         168
+  C:010AH         LINE#         169
+  C:010AH         LINE#         170
+  C:010AH         LINE#         171
+  C:010AH         LINE#         172
+  C:0111H         LINE#         173
+  C:0133H         LINE#         174
+  C:0133H         LINE#         175
+  C:0136H         LINE#         176
+  C:0136H         LINE#         177
+  C:0139H         LINE#         178
+  C:0139H         LINE#         179
+  C:013CH         LINE#         180
+  C:013CH         LINE#         181
+  C:013FH         LINE#         182
+  C:013FH         LINE#         183
+  C:0142H         LINE#         184
+  C:0142H         LINE#         185
+  C:0145H         LINE#         186
+  C:0145H         LINE#         187
+  C:0145H         LINE#         188
+  C:0145H         LINE#         189
+  C:0145H         LINE#         190
+  C:0148H         LINE#         191
+  C:016AH         LINE#         192
+  C:016AH         LINE#         193
+  C:016DH         LINE#         194
+  C:016DH         LINE#         195
+  C:0170H         LINE#         196
+  C:0170H         LINE#         197
+  C:0173H         LINE#         198
+  C:0173H         LINE#         199
+  C:0176H         LINE#         200
+  C:0176H         LINE#         201
+  C:0179H         LINE#         202
+  C:0179H         LINE#         203
+  C:017CH         LINE#         204
+  C:017CH         LINE#         205
+  C:017CH         LINE#         206
+  C:017CH         LINE#         207
+  C:017CH         LINE#         209
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 7
+
+
+  C:017CH         LINE#         210
+  C:017CH         LINE#         212
+  C:017EH         LINE#         214
+  -------         ENDPROC       KEYSCAN
+  -------         ENDMOD        KEYSCAN
+
+  -------         MODULE        TM1640
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  D:00B0H         PUBLIC        P3
+  D:00C0H         PUBLIC        P4
+  D:00C8H         PUBLIC        P5
+  D:00E8H         PUBLIC        P6
+  D:00F8H         PUBLIC        P7
+  D:00A8H         PUBLIC        IE
+  C:0247H         PUBLIC        _TM1640_AtoShow
+  D:00B8H         PUBLIC        IP
+  D:00D8H         PUBLIC        CCON
+  B:00A0H.5       PUBLIC        SCLK
+  D:0098H         PUBLIC        SCON
+  D:0088H         PUBLIC        TCON
+  C:0351H         PUBLIC        Start_1640
+  C:02DBH         PUBLIC        _Byte_1640
+  C:035AH         PUBLIC        Stop_1640
+  B:00A0H.3       PUBLIC        DIN
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          START_1640
+  C:0351H         LINE#         4
+  C:0351H         LINE#         5
+  C:0351H         LINE#         6
+  C:0353H         LINE#         7
+  C:0355H         LINE#         8
+  C:0357H         LINE#         9
+  C:0359H         LINE#         10
+  -------         ENDPROC       START_1640
+  -------         PROC          STOP_1640
+  C:035AH         LINE#         13
+  C:035AH         LINE#         14
+  C:035AH         LINE#         15
+  C:035CH         LINE#         16
+  C:035EH         LINE#         17
+  C:0360H         LINE#         18
+  C:0362H         LINE#         19
+  -------         ENDPROC       STOP_1640
+  -------         PROC          _BYTE_1640
+  D:0005H         SYMBOL        dat
+  -------         DO            
+  D:0004H         SYMBOL        i
+  -------         ENDDO         
+  C:02DBH         LINE#         22
+  C:02DDH         LINE#         23
+  C:02DDH         LINE#         24
+  C:02DFH         LINE#         25
+  C:02DFH         LINE#         26
+  C:02DFH         LINE#         27
+BL51 BANKED LINKER/LOCATER V6.22                                                      10/06/2020  19:27:12  PAGE 8
+
+
+  C:02F6H         LINE#         28
+  C:02FAH         LINE#         30
+  C:02FCH         LINE#         31
+  C:02FEH         LINE#         32
+  C:0300H         LINE#         33
+  C:0304H         LINE#         34
+  -------         ENDPROC       _BYTE_1640
+  -------         PROC          _TM1640_ATOSHOW
+  D:0008H         SYMBOL        startaddr
+  D:0009H         SYMBOL        buf
+  D:000CH         SYMBOL        num
+  -------         DO            
+  D:000DH         SYMBOL        i
+  -------         ENDDO         
+  C:0247H         LINE#         39
+  C:024FH         LINE#         40
+  C:024FH         LINE#         41
+  C:0252H         LINE#         42
+  C:0255H         LINE#         43
+  C:025AH         LINE#         44
+  C:025DH         LINE#         46
+  C:0260H         LINE#         47
+  C:0268H         LINE#         48
+  C:0272H         LINE#         49
+  C:0272H         LINE#         50
+  C:0285H         LINE#         51
+  C:0289H         LINE#         52
+  C:028CH         LINE#         54
+  C:028FH         LINE#         55
+  C:0294H         LINE#         56
+  -------         ENDPROC       _TM1640_ATOSHOW
+  -------         ENDMOD        TM1640
+
+  -------         MODULE        ?C?CLDOPTR
+  C:01EDH         PUBLIC        ?C?CLDOPTR
+  -------         ENDMOD        ?C?CLDOPTR
+
+  -------         MODULE        ?C?ICASE
+  C:021AH         PUBLIC        ?C?ICASE
+  -------         ENDMOD        ?C?ICASE
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_SET_VALU?KEYSCAN
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?KEYSCAN?KEYSCAN
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_TM1640_ATOSHOW?TM1640
+
+Program Size: data=15.0 xdata=0 code=874
+LINK/LOCATE RUN COMPLETE.  3 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,18 @@
+".\Objects\main.obj",
+".\Objects\KEYSCAN.obj",
+".\Objects\TM1640.obj",
+".\Objects\uart.obj",
+".\Objects\delay.obj",
+".\Objects\printf.obj",
+".\Objects\key.obj",
+".\Objects\SMG.obj",
+".\Objects\eeprom.obj",
+".\Objects\addProcessTask.obj",
+".\Objects\myFlash.obj",
+".\Objects\CRC.obj",
+".\Objects\spi.obj",
+".\Objects\interface.obj",
+".\Objects\List4_Malloc.obj" 
+TO ".\Objects\main" 
+PRINT(".\Listings\main.m51") RAMSIZE(256) 
+CODE( 0X0000-0XFFF8 )

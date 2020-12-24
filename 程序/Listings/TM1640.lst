@@ -1,0 +1,84 @@
+C51 COMPILER V9.00   TM1640                                                                11/24/2020 19:27:21 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE TM1640
+OBJECT MODULE PLACED IN .\Objects\TM1640.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE HARD\TM1640\TM1640.C LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\HARD\KEYSCA
+                    -N;.\HARD\TM1640;.\HARD;.\HARD\UART\STC8;.\HARD\delay;.\HARD\printf;.\HARD\MPU430-SPI;.\HARD\interface;.\HARD\TAST) DEBUG
+                    - OBJECTEXTEND PRINT(.\Listings\TM1640.lst) OBJECT(.\Objects\TM1640.obj)
+
+line level    source
+
+   1          #include "TM1640.H"
+   2          
+   3          // CLK高电平时，DAT拉低为开始
+   4          void Start_1640()
+   5          {
+   6   1              DIN_1; 
+   7   1              SCLK_1;
+   8   1          DIN_0;
+   9   1          SCLK_0;
+  10   1      }
+  11          
+  12          // CLK高电平时，DAT拉高为结束
+  13          void Stop_1640()
+  14          {
+  15   1          SCLK_0;
+  16   1          DIN_0;
+  17   1          SCLK_1;
+  18   1          DIN_1; 
+  19   1      }
+  20          
+  21          // 普通字节传输
+  22          void Byte_1640(u8 dat)
+  23          {
+  24   1          u8 i = 0;
+  25   1          for(i=0;i<8;i++)
+  26   1          {
+  27   2              if(dat&(0x01<<i))
+  28   2                  DIN_1;
+  29   2              else
+  30   2                  DIN_0;
+  31   2              SCLK_1;
+  32   2              SCLK_0;
+  33   2          }
+  34   1      }
+  35          
+  36          // 地址自增函数
+  37          // startaddr 起始地址
+  38          // num，显示的数量
+  39          void TM1640_AtoShow(u8 startaddr,u8* buf,u8 num)
+  40          {
+  41   1          u8 i = 0;
+  42   1          Start_1640();
+  43   1          Byte_1640(DATCMD_ATU);  // 自增命令
+  44   1          Stop_1640();
+  45   1      
+  46   1          Start_1640();
+  47   1          Byte_1640(ADDRSET(startaddr));  // 设置起始命令
+  48   1          for(i=0;i<num;i++)
+  49   1          {
+  50   2              Byte_1640(buf[i]);
+  51   2          }
+  52   1          Stop_1640();
+  53   1      
+C51 COMPILER V9.00   TM1640                                                                11/24/2020 19:27:21 PAGE 2   
+
+  54   1          Start_1640();
+  55   1          Byte_1640(SHOW_ON);    
+  56   1          Stop_1640();
+  57   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    166    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
